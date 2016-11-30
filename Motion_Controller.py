@@ -56,6 +56,7 @@ class MotionController:
             return self.get_nearest_aim()
 
         def remove_aim(self, aim):
+            self.all_aims.remove(aim)
             pass
 
         def run(self):
@@ -115,6 +116,7 @@ class MotionController:
             self.current_storey += self.current_speed
             if self.current_storey == self.current_aim:
                 self.current_speed = 0
+                self.strategy_module.remove_aim(self.current_aim)
 
             self.lock.release()
             print 'engine: current_storey ', self.current_storey
