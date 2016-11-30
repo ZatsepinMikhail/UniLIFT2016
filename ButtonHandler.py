@@ -10,5 +10,5 @@ class ButtonHandler:
 
     def run(self):
         while True:
-            buttonPressed = self.button_queue.get()
-            self.handle_button_pressure(buttonPressed)
+            button_pressed = self.button_queue.get()
+            self.handle_button_pressure(button_pressed)

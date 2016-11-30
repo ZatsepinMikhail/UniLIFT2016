@@ -8,7 +8,7 @@ class MotionController:
     class StrategyModule:
         def __init__(self, button_handler_queue, motion_controller):
 
-            #set of all aims
+            # set of all aims
             self.all_aims = []
 
             self.button_handler_queue = button_handler_queue
@@ -32,7 +32,6 @@ class MotionController:
                 pass
 
             return nearest_aim
-
 
         # aim = [storey, inner-outer]
         def add_new_aim(self, new_aim):
@@ -72,7 +71,7 @@ class MotionController:
         self.strategy_module = MotionController.StrategyModule(button_handler_queue, self)
         self.current_storey = 1
 
-        #-1, 0, 1
+        # -1, 0, 1
         self.current_speed = 0
         self.current_aim = -1
         self.new_aim = -1
@@ -94,7 +93,7 @@ class MotionController:
             if self.current_speed == 0:
                 self.event_for_engine.wait()
 
-                #bad decision
+                # bad decision
                 self.event_for_engine.clear()
                 self.current_aim = self.new_aim
 
@@ -128,6 +127,7 @@ class MotionController:
         thread_new_aim_checker.start()
         thread_engine.start()
         self.strategy_module.run()
+
 
 # solution to the problem of unpickable objects
 def init_run(button_handler_queue, weight_limit):

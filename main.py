@@ -1,25 +1,27 @@
 import multiprocessing
 import Buttons
-import Button_Handler
-import Motion_Controller
+import ButtonHandler
+import MotionController
 
 import time
 
 if __name__ == '__main__':
 
-    #queue buttons - button_handler
+    # queue buttons - button_handler
     queue_buttons_bh = multiprocessing.Queue()
 
-    #queue button_handler - strategy_module
+    # queue button_handler - strategy_module
     queue_bh_sm = multiprocessing.Queue()
-    storey_num = 10
+    num_storey = 10
 
-    button_handler = Button_Handler.ButtonHandler(queue_buttons_bh, queue_bh_sm)
+    button_handler = ButtonHandler.ButtonHandler(queue_buttons_bh, queue_bh_sm)
 
-    process_buttons = multiprocessing.Process(target=Buttons.simulate_buttons_pressure, args=(storey_num, queue_buttons_bh))
+    process_buttons = multiprocessing.Process(target=Buttons.simulate_buttons_pressure,
+                                              args=(num_storey, queue_buttons_bh))
     process_button_handler = multiprocessing.Process(target=button_handler.run)
 
-    process_motion_controller = multiprocessing.Process(target=Motion_Controller.init_run, args=(queue_bh_sm, 300))
+    process_motion_controller = multiprocessing.Process(target=MotionController.init_run,
+                                                        args=(queue_bh_sm, 300))
 
     process_buttons.start()
     process_button_handler.start()

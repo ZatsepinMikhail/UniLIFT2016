@@ -1,6 +1,7 @@
 import random
 from time import sleep
 
+
 class Button:
 
     def __init__(self, storey, inner_button, message_queue):
@@ -20,10 +21,10 @@ class Button:
         return self.storey
 
 
-def simulate_buttons_pressure(storey_num, queue):
+def simulate_buttons_pressure(num_storey, queue):
 
     buttons = []
-    for i in xrange(1, storey_num + 1):
+    for i in xrange(1, num_storey + 1):
         buttons.append(Button(i, False, queue))
 
     num_button_pressed = 0
