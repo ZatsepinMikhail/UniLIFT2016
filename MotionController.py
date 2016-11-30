@@ -2,13 +2,16 @@ import threading
 import bisect
 import time
 
+from DoorController import *
+
 
 class MotionController(object):
 
     class StrategyModule(object):
+
         def __init__(self, button_handler_queue, motion_controller):
 
-            # set of all aims
+            # list of all aims
             self.all_aims = []
 
             self.button_handler_queue = button_handler_queue
@@ -78,6 +81,8 @@ class MotionController(object):
         self.weight_limit = weight_limit
         self.lock = threading.Lock()
 
+        self.door_controller = DoorController()
+
     def get_current_storey(self):
         return self.current_storey
 
@@ -103,6 +108,7 @@ class MotionController(object):
                     self.current_speed = -1
 
             elif self.event_for_engine.is_set():
+                print 'engine: change aim ' + str(self.current_aim) + ' -> ' + str(self.new_aim)
                 self.current_aim = self.new_aim
                 if self.current_aim > self.current_storey:
                     self.current_speed = 1
@@ -110,14 +116,15 @@ class MotionController(object):
                     self.current_speed = -1
 
             time.sleep(1)
+
             self.lock.acquire()
             self.current_storey += self.current_speed
+            print 'engine: current_storey ', self.current_storey
             if self.current_storey == self.current_aim:
                 self.current_speed = 0
+                self.door_controller.release_passengers()
                 self.strategy_module.remove_aim(self.current_aim)
-
             self.lock.release()
-            print 'engine: current_storey ', self.current_storey
 
     def run(self):
         thread_new_aim_checker = threading.Thread(target=self.run_check_new_aim)
