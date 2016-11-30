@@ -3,18 +3,18 @@ from time import sleep
 
 class Button:
 
-    def __init__(self, storey, inner_button, queue):
+    def __init__(self, storey, inner_button, message_queue):
         self.pressed = False
         self.storey = storey
         self.inner_button = inner_button
-        self.queue = queue
+        self.message_queue = message_queue
 
     def is_pressed(self):
         return self.pressed
 
     def press(self):
         self.pressed = True
-        self.queue.put(self.storey)
+        self.message_queue.put([self.storey, self.inner_button])
 
     def get_storey(self):
         return self.storey
