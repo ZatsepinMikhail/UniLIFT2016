@@ -3,9 +3,9 @@ import bisect
 import time
 
 
-class MotionController:
+class MotionController(object):
 
-    class StrategyModule:
+    class StrategyModule(object):
         def __init__(self, button_handler_queue, motion_controller):
 
             # set of all aims
@@ -103,7 +103,6 @@ class MotionController:
                     self.current_speed = -1
 
             elif self.event_for_engine.is_set():
-
                 self.current_aim = self.new_aim
                 if self.current_aim > self.current_storey:
                     self.current_speed = 1

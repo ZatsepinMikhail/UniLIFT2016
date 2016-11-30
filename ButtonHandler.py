@@ -1,4 +1,4 @@
-class ButtonHandler:
+class ButtonHandler(object):
 
     def __init__(self, button_queue, strategy_module_queue):
         self.button_queue = button_queue

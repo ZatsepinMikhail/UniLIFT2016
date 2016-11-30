@@ -2,7 +2,7 @@ import random
 from time import sleep
 
 
-class Button:
+class Button(object):
 
     def __init__(self, storey, inner_button, message_queue):
         self.pressed = False
