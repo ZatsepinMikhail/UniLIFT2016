@@ -1,10 +1,12 @@
 class ButtonHandler:
 
-    def __init__(self):
-        self.buttons = []
+    def __init__(self, button_queue):
+        self.button_queue = button_queue
 
-    def add_button(self, button):
-        self.buttons.append(button)
+    def handle_button_pressure(self, button):
+        print 'process button ', button
 
-    def handle_button(self):
-        pass
+    def simulate_work(self):
+        while True:
+            buttonPressed = self.button_queue.get()
+            self.handle_button_pressure(buttonPressed)
