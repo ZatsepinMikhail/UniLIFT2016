@@ -113,12 +113,15 @@ class MotionController:
             time.sleep(1)
             self.lock.acquire()
             self.current_storey += self.current_speed
+            if self.current_storey == self.current_aim:
+                self.current_speed = 0
+
             self.lock.release()
             print 'engine: current_storey ', self.current_storey
 
     def run(self):
         thread_new_aim_checker = threading.Thread(target=self.run_check_new_aim)
-        thread_engine = threading.Thread(target=self.run_engine())
+        thread_engine = threading.Thread(target=self.run_engine)
 
         thread_new_aim_checker.start()
         thread_engine.start()
