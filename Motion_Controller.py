@@ -1,6 +1,6 @@
-import multiprocessing
 import threading
 import bisect
+import time
 
 
 class MotionController:
@@ -18,8 +18,13 @@ class MotionController:
 
             items = self.all_aims
             nearest_aim = -1 if len(items) == 0 else items[0]
+
+            self.motion_controller.lock.acquire()
+            current_storey = self.motion_controller.current_storey
+            self.motion_controller.lock.release()
+
             for index in xrange(0, len(items) - 1):
-                if items[index] <= self.motion_controller.current_storey <= items[index + 1]:
+                if items[index] <= current_storey <= items[index + 1]:
                     if self.motion_controller.current_speed <= 0:
                         nearest_aim = items[index]
                     elif self.motion_controller.current_speed > 0:
@@ -40,7 +45,6 @@ class MotionController:
             updated_first_aim = self.get_nearest_aim()
             if previous_first_aim != updated_first_aim:
                 print 'strategy_module: notify motion controller', previous_first_aim, ' -> ', updated_first_aim
-                print list(self.all_aims)
                 self.motion_controller.event_new_aim.set()
 
             else:
@@ -57,7 +61,7 @@ class MotionController:
         def run(self):
             while True:
                 new_aim = self.button_handler_queue.get()
-                print 'strategy_module: got new aim ', new_aim
+                #print 'strategy_module: got new aim ', new_aim
                 if new_aim[0] not in self.all_aims:
                     self.add_new_aim(new_aim[0])
 
@@ -71,6 +75,7 @@ class MotionController:
         self.current_aim = -1
         self.new_aim = -1
         self.weight_limit = weight_limit
+        self.lock = threading.Lock()
 
     def get_current_storey(self):
         return self.current_storey
@@ -78,23 +83,37 @@ class MotionController:
     def run_check_new_aim(self):
         while True:
             self.event_new_aim.wait()
-            new_aim = self.strategy_module.get_new_aim()
-            print 'motion_controller: got new aim ', new_aim
+            self.new_aim = self.strategy_module.get_new_aim()
+            print 'motion_controller: got new aim ', self.new_aim
 
     def run_engine(self):
         while True:
-            while self.current_aim != -1:
-                pass
+            while self.new_aim == self.current_aim:
+                time.sleep(10)
+                print 'engine: wait', self.new_aim, self.current_aim
+
+            self.current_aim = self.new_aim
+            if self.current_aim > self.current_storey:
+                self.current_speed = 1
+            elif self.current_aim < self.current_storey:
+                self.current_speed = -1
+
+            time.sleep(1)
+            self.lock.acquire()
+            self.current_storey += self.current_speed
+            self.lock.release()
+            print 'engine: current_storey ', self.current_storey
 
     def run(self):
         thread_new_aim_checker = threading.Thread(target=self.run_check_new_aim)
         #thread_engine = threading.Thread(target=self.run_engine())
 
         thread_new_aim_checker.start()
+        #thread_engine.start()
         self.strategy_module.run()
 
 # solution to the problem of unpickable objects
 def init_run(button_handler_queue, weight_limit):
-    strategy_module_event = multiprocessing.Event()
+    strategy_module_event = threading.Event()
     motion_controller = MotionController(button_handler_queue, weight_limit)
     motion_controller.run()

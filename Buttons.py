@@ -28,7 +28,7 @@ def simulate_buttons_pressure(storey_num, queue):
 
     num_button_pressed = 0
     while True:
-        sleep(random.random())
+        sleep(10 * random.random())
         random_button_number = random.randint(0, len(buttons) - 1)
         button = buttons[random_button_number]
         if not button.is_pressed():
