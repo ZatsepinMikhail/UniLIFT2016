@@ -67,6 +67,7 @@ class MotionController:
 
     def __init__(self, button_handler_queue, weight_limit):
         self.event_new_aim = threading.Event()
+        self.event_for_engine = threading.Event()
         self.strategy_module = MotionController.StrategyModule(button_handler_queue, self)
         self.current_storey = 1
 
@@ -85,18 +86,29 @@ class MotionController:
             self.event_new_aim.wait()
             self.new_aim = self.strategy_module.get_new_aim()
             print 'motion_controller: got new aim ', self.new_aim
+            self.event_for_engine.set()
 
     def run_engine(self):
         while True:
-            while self.new_aim == self.current_aim:
-                time.sleep(10)
-                print 'engine: wait', self.new_aim, self.current_aim
+            if self.current_speed == 0:
+                self.event_for_engine.wait()
 
-            self.current_aim = self.new_aim
-            if self.current_aim > self.current_storey:
-                self.current_speed = 1
-            elif self.current_aim < self.current_storey:
-                self.current_speed = -1
+                #bad decision
+                self.event_for_engine.clear()
+                self.current_aim = self.new_aim
+
+                if self.current_aim > self.current_storey:
+                    self.current_speed = 1
+                elif self.current_aim < self.current_storey:
+                    self.current_speed = -1
+
+            elif self.event_for_engine.is_set():
+
+                self.current_aim = self.new_aim
+                if self.current_aim > self.current_storey:
+                    self.current_speed = 1
+                elif self.current_aim < self.current_storey:
+                    self.current_speed = -1
 
             time.sleep(1)
             self.lock.acquire()
@@ -106,14 +118,13 @@ class MotionController:
 
     def run(self):
         thread_new_aim_checker = threading.Thread(target=self.run_check_new_aim)
-        #thread_engine = threading.Thread(target=self.run_engine())
+        thread_engine = threading.Thread(target=self.run_engine())
 
         thread_new_aim_checker.start()
-        #thread_engine.start()
+        thread_engine.start()
         self.strategy_module.run()
 
 # solution to the problem of unpickable objects
 def init_run(button_handler_queue, weight_limit):
-    strategy_module_event = threading.Event()
     motion_controller = MotionController(button_handler_queue, weight_limit)
     motion_controller.run()
