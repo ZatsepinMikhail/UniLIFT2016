@@ -3,6 +3,7 @@ import bisect
 import time
 
 from DoorController import *
+from LightController import *
 
 
 class MotionController(object):
@@ -82,6 +83,7 @@ class MotionController(object):
         self.lock = threading.Lock()
 
         self.door_controller = DoorController()
+        self.light_controller = LightController()
 
     def get_current_storey(self):
         return self.current_storey
@@ -96,7 +98,10 @@ class MotionController(object):
     def run_engine(self):
         while True:
             if self.current_speed == 0:
+                if not self.event_for_engine.is_set():
+                    self.light_controller.turn_light_off()
                 self.event_for_engine.wait()
+                self.light_controller.turn_light_on()
 
                 # bad decision
                 self.event_for_engine.clear()
