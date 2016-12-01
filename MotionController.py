@@ -1,6 +1,8 @@
 import threading
 import bisect
 import time
+from OrderedSet import OrderedSet
+from heapq import *
 
 from DoorController import *
 from LightController import *
@@ -13,62 +15,77 @@ class MotionController(object):
 
         def __init__(self, button_handler_queue, motion_controller):
 
-            # list of all aims
-            self.all_aims = []
+            # set of incoming aims
+            self.aim_set = OrderedSet()
+            self.aims_intermediate = []  # heap
+            self.aim_main = None
+            self.is_main_returned = False
 
             self.button_handler_queue = button_handler_queue
             self.motion_controller = motion_controller
 
         def get_nearest_aim(self):
+            assert len(self.aim_set) != 0 or self.aim_main is not None, 'Function cannot be called if there are no ' \
+                                                                        'new aims '
 
-            items = self.all_aims
-            nearest_aim = -1 if len(items) == 0 else items[0]
+            if self.aim_main is not None:
+                # lock due to current_storey and aims_intermediate
+                self.motion_controller.lock.acquire()
+                if not self.aims_intermediate:
+                    res = self.aim_main
+                    self.is_main_returned = True
+                # else:
+                #     current_storey = self.motion_controller.current_storey
+                #     speed = self.motion_controller.current_speed
+                #
+                #     res = heappop(self.aims_intermediate)
+                #     while self.is_intermediate_aim(current_storey, self.aim_main[0], res[0]):
+                #         res = heappop(self.aims_intermediate)
+                self.motion_controller.lock.release()
+            else:
+                self.aim_main = self.aim_set.pop()
+                res = self.aim_main
+                print 'strategy: chose', res
+                # self.motion_controller.lock.acquire()
+                # current_storey = self.motion_controller.current_storey
+                # self.motion_controller.lock.release()
+                # for aim in self.aim_set:
+                #     if self.is_intermediate_aim(current_storey, aim[0], self.aim_main[0]):
+                #         self.add_new_aim(aim)
 
+            self.aim_main = res
+            return res
+
+        def is_intermediate_aim(self, storey_from, storey_check, storey_to):
+            return max(storey_from, storey_to) - 1 >= storey_check >= min(storey_from, storey_to) + 1
+
+        # aim = [storey, inner-outer]
+        def add_new_aim(self, new_aim):
             self.motion_controller.lock.acquire()
             current_storey = self.motion_controller.current_storey
             self.motion_controller.lock.release()
 
-            for index in xrange(0, len(items) - 1):
-                if items[index] <= current_storey <= items[index + 1]:
-                    if self.motion_controller.current_speed <= 0:
-                        nearest_aim = items[index]
-                    elif self.motion_controller.current_speed > 0:
-                        nearest_aim = items[index + 1]
+            if self.aim_main is not None and self.is_intermediate_aim(current_storey, new_aim[0], self.aim_main[0]):
+                # print 'strategy_module: notify motion controller' + ' -> ', new_aim[0]
+                # self.motion_controller.event_new_aim.set()
                 pass
-
-            return nearest_aim
-
-        # aim = [storey, inner-outer]
-        def add_new_aim(self, new_aim):
-
-            previous_first_aim = self.get_nearest_aim()
-
-            bisect.insort_right(self.all_aims, new_aim)
-
-            # get min value from priority queue
-            updated_first_aim = self.get_nearest_aim()
-            if previous_first_aim != updated_first_aim:
-                print 'strategy_module: notify motion controller', previous_first_aim, ' -> ', updated_first_aim
-                self.motion_controller.event_new_aim.set()
-
             else:
-                # print previous_first_aim, updated_first_aim
-                pass
+                self.aim_set.add(new_aim)
+                if self.aim_main is None:
+                    self.motion_controller.event_new_aim.set()
 
         def get_new_aim(self):
             self.motion_controller.event_new_aim.clear()
             return self.get_nearest_aim()
 
         def remove_aim(self, aim):
-            self.all_aims.remove(aim)
-            pass
+            self.aim_set.remove(aim)
 
         def run(self):
             while True:
                 new_aim = self.button_handler_queue.get()
-                #print 'strategy_module: got new aim ', new_aim
-                if new_aim[0] not in self.all_aims:
-                    self.add_new_aim(new_aim[0])
+                self.add_new_aim(new_aim)
+                print 'strategy_module: got new aim ' + str(new_aim) + '. Set:', self.aim_set
 
     def __init__(self, button_handler_queue, weight_limit):
         self.event_new_aim = threading.Event()

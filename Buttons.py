@@ -15,7 +15,7 @@ class Button(object):
 
     def press(self):
         self.pressed = True
-        self.message_queue.put([self.storey, self.inner_button])
+        self.message_queue.put((self.storey, self.inner_button))
 
     def get_storey(self):
         return self.storey
@@ -29,7 +29,7 @@ def simulate_buttons_pressure(num_storey, queue):
 
     num_button_pressed = 0
     while True:
-        sleep(10 * random.random())
+        sleep(5 * random.random())
         random_button_number = random.randint(0, len(buttons) - 1)
         button = buttons[random_button_number]
         if not button.is_pressed():
