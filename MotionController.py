@@ -4,6 +4,7 @@ import time
 
 from DoorController import *
 from LightController import *
+from WeightSensor import *
 
 
 class MotionController(object):
@@ -79,11 +80,11 @@ class MotionController(object):
         self.current_speed = 0
         self.current_aim = -1
         self.new_aim = -1
-        self.weight_limit = weight_limit
         self.lock = threading.Lock()
 
         self.door_controller = DoorController()
         self.light_controller = LightController()
+        self.weight_sensor = WeightSensor(weight_limit)
 
     def get_current_storey(self):
         return self.current_storey
@@ -98,10 +99,7 @@ class MotionController(object):
     def run_engine(self):
         while True:
             if self.current_speed == 0:
-                if not self.event_for_engine.is_set():
-                    self.light_controller.turn_light_off()
                 self.event_for_engine.wait()
-                self.light_controller.turn_light_on()
 
                 # bad decision
                 self.event_for_engine.clear()
@@ -127,7 +125,14 @@ class MotionController(object):
             print 'engine: current_storey ', self.current_storey
             if self.current_storey == self.current_aim:
                 self.current_speed = 0
-                self.door_controller.release_passengers()
+                self.light_controller.turn_light_on()
+                while True:
+                    self.door_controller.release_passengers(self.weight_sensor)
+                    if self.weight_sensor.is_limit_exceeded():
+                        continue
+                    if self.weight_sensor.is_empty():
+                        self.light_controller.turn_light_off()
+                    break
                 self.strategy_module.remove_aim(self.current_aim)
             self.lock.release()
 

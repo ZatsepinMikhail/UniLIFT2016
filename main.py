@@ -21,7 +21,7 @@ if __name__ == '__main__':
     process_button_handler = multiprocessing.Process(target=button_handler.run)
 
     process_motion_controller = multiprocessing.Process(target=MotionController.init_run,
-                                                        args=(queue_bh_sm, 300))
+                                                        args=(queue_bh_sm, 100))
 
     process_buttons.start()
     process_button_handler.start()
