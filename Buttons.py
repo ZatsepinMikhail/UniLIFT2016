@@ -24,7 +24,7 @@ class Button(object):
 def simulate_buttons_pressure(num_storey, queue):
 
     buttons = []
-    for i in xrange(1, num_storey + 1):
+    for i in range(1, num_storey + 1):
         buttons.append(Button(i, False, queue))
 
     num_button_pressed = 0

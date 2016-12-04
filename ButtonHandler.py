@@ -5,7 +5,7 @@ class ButtonHandler(object):
         self.strategy_module_queue = strategy_module_queue
 
     def handle_button_pressure(self, button):
-        print 'button_handler: process button ', button
+        print('button_handler: process button ', button)
         self.strategy_module_queue.put(button)
 
     def run(self):

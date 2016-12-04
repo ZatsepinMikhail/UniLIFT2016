@@ -1,10 +1,10 @@
 import threading
 import bisect
-import time
 
 from DoorController import *
 from LightController import *
 from WeightSensor import *
+from Common import LiftState
 
 
 class MotionController(object):
@@ -27,8 +27,9 @@ class MotionController(object):
             self.motion_controller.lock.acquire()
             current_storey = self.motion_controller.current_storey
             self.motion_controller.lock.release()
+            # print("CURRENT STOREY: ", current_storey)
 
-            for index in xrange(0, len(items) - 1):
+            for index in range(0, len(items) - 1):
                 if items[index] <= current_storey <= items[index + 1]:
                     if self.motion_controller.current_speed <= 0:
                         nearest_aim = items[index]
@@ -48,7 +49,7 @@ class MotionController(object):
             # get min value from priority queue
             updated_first_aim = self.get_nearest_aim()
             if previous_first_aim != updated_first_aim:
-                print 'strategy_module: notify motion controller', previous_first_aim, ' -> ', updated_first_aim
+                print('strategy_module: notify motion controller', previous_first_aim, ' -> ', updated_first_aim)
                 self.motion_controller.event_new_aim.set()
 
             else:
@@ -86,6 +87,14 @@ class MotionController(object):
         self.light_controller = LightController()
         self.weight_sensor = WeightSensor(weight_limit)
 
+    def get_current_state(self):
+        state = LiftState(
+            self.get_current_storey(),
+            self.door_controller.get_open_state(),
+            self.light_controller.get_light_state(),
+            self.weight_sensor.get_weight())
+        return state
+
     def get_current_storey(self):
         return self.current_storey
 
@@ -93,7 +102,7 @@ class MotionController(object):
         while True:
             self.event_new_aim.wait()
             self.new_aim = self.strategy_module.get_new_aim()
-            print 'motion_controller: got new aim ', self.new_aim
+            print('motion_controller: got new aim ', self.new_aim)
             self.event_for_engine.set()
 
     def run_engine(self):
@@ -111,7 +120,7 @@ class MotionController(object):
                     self.current_speed = -1
 
             elif self.event_for_engine.is_set():
-                print 'engine: change aim ' + str(self.current_aim) + ' -> ' + str(self.new_aim)
+                print('engine: change aim ' + str(self.current_aim) + ' -> ' + str(self.new_aim))
                 self.current_aim = self.new_aim
                 if self.current_aim > self.current_storey:
                     self.current_speed = 1
@@ -122,7 +131,7 @@ class MotionController(object):
 
             self.lock.acquire()
             self.current_storey += self.current_speed
-            print 'engine: current_storey ', self.current_storey
+            print('engine: current_storey ', self.current_storey)
             if self.current_storey == self.current_aim:
                 self.current_speed = 0
                 self.light_controller.turn_light_on()
