@@ -8,7 +8,7 @@ class WeightSensor(object):
         self.weight_limit = weight_limit
 
     def get_weight(self):
-        print 'weight sensor: current weight', self.weight
+        print('weight sensor: current weight', self.weight)
         return self.weight
 
     def is_limit_exceeded(self):
@@ -20,4 +20,4 @@ class WeightSensor(object):
     # simulate passengers
     def simulate_setting_weight(self):
         self.weight = random.randint(0, 5) * 50
-        print 'weight sensor: set weight', self.weight
+        print('weight sensor: set weight', self.weight)
