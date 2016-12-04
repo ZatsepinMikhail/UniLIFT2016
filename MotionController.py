@@ -6,6 +6,7 @@ import multiprocessing
 from DoorController import *
 from LightController import *
 from WeightSensor import *
+from Common import LiftState
 
 
 class MotionController(object):
@@ -88,6 +89,14 @@ class MotionController(object):
         self.door_controller = DoorController()
         self.light_controller = LightController()
         self.weight_sensor = WeightSensor(weight_limit)
+
+    def get_current_state(self):
+        state = LiftState(
+            self.get_current_storey(),
+            self.door_controller.get_open_state(),
+            self.light_controller.get_light_state(),
+            self.weight_sensor.get_weight())
+        return state
 
     def get_current_storey(self):
         return self.current_storey

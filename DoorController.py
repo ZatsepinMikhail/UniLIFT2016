@@ -12,7 +12,7 @@ class DoorController(object):
     def close_doors(self):
         self.is_open = False
 
-    def is_open(self):
+    def get_open_state(self):
         return self.is_open
 
     def release_passengers(self, weight_sensor):

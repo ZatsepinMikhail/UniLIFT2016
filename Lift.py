@@ -1,12 +1,13 @@
-import multiprocessing, threading
+import multiprocessing
+import threading
 import Buttons
 import ButtonHandler
 import MotionController
+import LiftGUI
+import Common
 
-import random, time
 from time import sleep
-from PyQt5.QtWidgets import QMainWindow, QFrame
-from PyQt5.QtGui import QPainter, QColor
+from PyQt5.QtWidgets import QMainWindow
 
 
 class Lift(QMainWindow):
@@ -57,7 +58,7 @@ class Lift(QMainWindow):
 
     def init_ui(self):
 
-        self.tboard = Board(self, self.num_storey)
+        self.tboard = LiftGUI.LiftGUI(self, self.num_storey)
         self.setCentralWidget(self.tboard)
 
         # self.statusbar = self.statusBar()
@@ -71,77 +72,13 @@ class Lift(QMainWindow):
 
     def update_state(self):
         while True:
-            sleep(1)
-            current_storey = self.motion_controller.current_storey
-            self.tboard.set_state(current_storey)
-            print("CURRENT ", current_storey)
-            # self.update()
+            sleep(0.1)
+            current_state = self.motion_controller.get_current_state()
+            # current_storey = self.motion_controller.current_storey
+            self.tboard.set_state(current_state)
+            # print("CURRENT ", current_state.storey)
 
 
 
 
-class StoreyState:
-    Empty = 0
-    Lift = 1
 
-
-
-class Board(QFrame):
-
-    BoardWidth = 2
-
-    def __init__(self, parent, num_storey):
-        super().__init__(parent)
-
-        self.current_storey = 1
-        self.num_storey = num_storey
-        # self.current_storey = multiprocessing.Value("i", 1)
-
-    def set_state(self, current_storey):
-        self.current_storey = current_storey
-        self.update()
-        # self.paintEvent(None)
-        print("board: set state ", self.current_storey)
-
-    def square_width(self):
-        return self.contentsRect().width() // Board.BoardWidth
-
-    def square_height(self):
-        return self.contentsRect().height() // (self.num_storey - 1)
-
-    def state_at(self, storey):
-        if storey == self.current_storey:
-            return StoreyState.Lift
-        else:
-            return StoreyState.Empty
-
-    def paintEvent(self, event):
-        print("PAINT")
-        painter = QPainter(self)
-        rect = self.contentsRect()
-
-        board_bottom = rect.bottom()
-
-        for i in range(1, self.num_storey ):
-            self.drawSquare(painter, rect.left(), board_bottom - i * self.square_height(), self.state_at(i))
-
-        # self.set_state(self.current_storey + 1)
-
-    def drawSquare(self, painter, x, y, shape):
-
-        colorTable = [0x000000, 0xCC6666, 0x66CC66, 0x6666CC,
-                      0xCCCC66, 0xCC66CC, 0x66CCCC, 0xDAAA00]
-
-        color = QColor(colorTable[shape])
-        painter.fillRect(x + 1, y + 1, self.square_width() - 2,
-                         self.square_height() - 2, color)
-
-        painter.setPen(color.lighter())
-        painter.drawLine(x, y + self.square_height() - 1, x, y)
-        painter.drawLine(x, y, x + self.square_width() - 1, y)
-
-        painter.setPen(color.darker())
-        painter.drawLine(x + 1, y + self.square_height() - 1,
-                         x + self.square_width() - 1, y + self.square_height() - 1)
-        painter.drawLine(x + self.square_width() - 1,
-                         y + self.square_height() - 1, x + self.square_width() - 1, y + 1)

@@ -13,3 +13,6 @@ class LightController(object):
     def turn_light_off(self):
         self.is_light_on = False
         print('light_controller: light turns off')
+
+    def get_light_state(self):
+        return self.is_light_on
