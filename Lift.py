@@ -22,7 +22,6 @@ class Lift(QMainWindow):
         self.init_ui()
         process_state = threading.Thread(target=self.update_state)
         process_state.start()
-        # self.update_state()
 
     def init_processes(self):
         # queue buttons - button_handler
@@ -53,18 +52,10 @@ class Lift(QMainWindow):
         # queue_buttons_bh.close()
         # queue_bh_sm.close()
 
-        # process_state = multiprocessing.Process(target=self.update_state)
-        # process_state.run()
-
     def init_ui(self):
 
         self.tboard = LiftGUI.LiftGUI(self, self.num_storey)
         self.setCentralWidget(self.tboard)
-
-        # self.statusbar = self.statusBar()
-        # self.tboard.msg2Statusbar[str].connect(self.statusbar.showMessage)
-        #
-        # self.tboard.start()
 
         self.resize(300, 400)
         self.setWindowTitle('Lift')
@@ -74,7 +65,6 @@ class Lift(QMainWindow):
         while True:
             sleep(0.1)
             current_state = self.motion_controller.get_current_state()
-            # current_storey = self.motion_controller.current_storey
             self.tboard.set_state(current_state)
             # print("CURRENT ", current_state.storey)
 

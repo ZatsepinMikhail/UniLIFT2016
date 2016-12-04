@@ -1,7 +1,5 @@
 import threading
 import bisect
-import time
-import multiprocessing
 
 from DoorController import *
 from LightController import *
@@ -78,7 +76,6 @@ class MotionController(object):
         self.event_for_engine = threading.Event()
         self.strategy_module = MotionController.StrategyModule(button_handler_queue, self)
         self.current_storey = 1
-        # self.current_storey = multiprocessing.Value('i', 1)
 
         # -1, 0, 1
         self.current_speed = 0

@@ -8,7 +8,7 @@ class WeightSensor(object):
         self.weight_limit = weight_limit
 
     def get_weight(self):
-        print('weight sensor: current weight', self.weight)
+        # print('weight sensor: current weight', self.weight)
         return self.weight
 
     def is_limit_exceeded(self):
