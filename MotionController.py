@@ -1,6 +1,7 @@
 import threading
 import bisect
 import time
+import multiprocessing
 
 from DoorController import *
 from LightController import *
@@ -25,8 +26,9 @@ class MotionController(object):
             nearest_aim = -1 if len(items) == 0 else items[0]
 
             self.motion_controller.lock.acquire()
-            current_storey = self.motion_controller.current_storey
+            current_storey = self.motion_controller.current_storey.value
             self.motion_controller.lock.release()
+            # print("CURRENT STOREY: ", current_storey)
 
             for index in range(0, len(items) - 1):
                 if items[index] <= current_storey <= items[index + 1]:
@@ -74,7 +76,8 @@ class MotionController(object):
         self.event_new_aim = threading.Event()
         self.event_for_engine = threading.Event()
         self.strategy_module = MotionController.StrategyModule(button_handler_queue, self)
-        self.current_storey = 1
+        # self.current_storey = 1
+        self.current_storey = multiprocessing.Value('i', 1)
 
         # -1, 0, 1
         self.current_speed = 0
@@ -87,7 +90,7 @@ class MotionController(object):
         self.weight_sensor = WeightSensor(weight_limit)
 
     def get_current_storey(self):
-        return self.current_storey
+        return self.current_storey.value
 
     def run_check_new_aim(self):
         while True:
@@ -105,25 +108,25 @@ class MotionController(object):
                 self.event_for_engine.clear()
                 self.current_aim = self.new_aim
 
-                if self.current_aim > self.current_storey:
+                if self.current_aim > self.current_storey.value:
                     self.current_speed = 1
-                elif self.current_aim < self.current_storey:
+                elif self.current_aim < self.current_storey.value:
                     self.current_speed = -1
 
             elif self.event_for_engine.is_set():
                 print('engine: change aim ' + str(self.current_aim) + ' -> ' + str(self.new_aim))
                 self.current_aim = self.new_aim
-                if self.current_aim > self.current_storey:
+                if self.current_aim > self.current_storey.value:
                     self.current_speed = 1
-                elif self.current_aim < self.current_storey:
+                elif self.current_aim < self.current_storey.value:
                     self.current_speed = -1
 
             time.sleep(1)
 
             self.lock.acquire()
-            self.current_storey += self.current_speed
-            print('engine: current_storey ', self.current_storey)
-            if self.current_storey == self.current_aim:
+            self.current_storey.value += self.current_speed
+            print('engine: current_storey ', self.current_storey.value)
+            if self.current_storey.value == self.current_aim:
                 self.current_speed = 0
                 self.light_controller.turn_light_on()
                 while True:
