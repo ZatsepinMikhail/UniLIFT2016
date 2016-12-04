@@ -1,8 +1,8 @@
 from Common import LiftState
 
 from PyQt5.QtWidgets import QFrame
-from PyQt5.QtGui import QPainter, QColor, QPen
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter, QColor, QPen, QBrush
+from PyQt5.QtCore import Qt, QRect
 
 
 class StoreyState:
@@ -52,6 +52,7 @@ class LiftGUI(QFrame):
     def draw_storey(self, painter, x, y, storey_state):
         color_table = [Qt.black, Qt.yellow, Qt.blue]
         color = QColor(color_table[storey_state])
+
         painter.fillRect(x + 1, y + 1, self.square_width() - 2,
                          self.square_height() - 2, color)
 
@@ -65,10 +66,14 @@ class LiftGUI(QFrame):
         painter.drawLine(x + self.square_width() - 1,
                          y + self.square_height() - 1, x + self.square_width() - 1, y + 1)
 
-        if storey_state != StoreyState.EMPTY and not self.current_state.is_open:
-            lines_number = 10
-            step = self.square_width() // lines_number
-            painter.setPen(QPen(color.darker(), 3))
-            for i in range(1, lines_number):
-                painter.drawLine(x + i * step, y + self.square_height() - 2, x + i * step, y + 2)
-            pass
+        if storey_state != StoreyState.EMPTY:
+            if not self.current_state.is_open:
+                painter.setBrush(QBrush(Qt.DiagCrossPattern))
+                painter.drawRect(x + 1, y + 1, self.square_width() - 2, self.square_height() - 2)
+
+            if self.current_state.weight > 0:
+                painter.setPen(Qt.red)
+                painter.drawText(
+                    QRect(x + 1, y + 1, self.square_width() - 2, self.square_height() - 2),
+                    Qt.AlignCenter,
+                    str(self.current_state.weight))
