@@ -13,7 +13,6 @@ class StoreyState:
 
 class LiftGUI(QFrame):
 
-    storey_number_width = 30
     information_board_height = 50
 
     def __init__(self, parent, num_storey):
@@ -27,7 +26,7 @@ class LiftGUI(QFrame):
         self.update()
 
     def square_width(self):
-        return self.contentsRect().width() - self.storey_number_width
+        return self.contentsRect().width() - self.square_height()
 
     def square_height(self):
         return (self.contentsRect().height() - self.information_board_height) // self.num_storey
@@ -49,21 +48,23 @@ class LiftGUI(QFrame):
 
         for i in range(1, self.num_storey + 1):
             storey_top = board_bottom - i * self.square_height()
-            self.draw_storey(painter, rect.left() + self.storey_number_width, storey_top, self.state_at(i))
+            self.draw_storey(painter, rect.left() + self.square_height(), storey_top, self.state_at(i))
             self.draw_storey_number(painter, rect.left(), storey_top, i)
 
-        self.draw_information_board(painter)
+        information_board_rect = QRect(rect.left() + self.square_height(), rect.top(), self.square_width(), self.information_board_height)
+        self.draw_information_board(painter, information_board_rect)
 
-    def draw_information_board(self, painter):
-        rect = self.contentsRect()
-        information_board_rect = QRect(rect.left(), rect.top(), rect.width(), self.information_board_height)
-        painter.fillRect(information_board_rect, Qt.gray)
+    def draw_information_board(self, painter, rect):
+        painter.fillRect(rect, Qt.lightGray)
         painter.setPen(Qt.black)
-        painter.drawText(information_board_rect, Qt.AlignCenter, "current storey: " + str(self.current_state.storey))
+        painter.drawText(rect, Qt.AlignCenter, "current storey: " + str(self.current_state.storey))
 
     def draw_storey_number(self, painter, x, y, storey_number):
-        rect = QRect(x, y, self.storey_number_width - 1, self.square_height() - 1)
-        painter.fillRect(rect, Qt.gray)
+        margin = 5
+        rect = QRect(x + margin, y + margin, self.square_height() - 2 * margin, self.square_height() - 2 * margin)
+        painter.setPen(Qt.white)
+        painter.setBrush(Qt.lightGray)
+        painter.drawEllipse(rect)
         painter.setPen(Qt.black)
         painter.drawText(rect, Qt.AlignCenter, str(storey_number))
 
