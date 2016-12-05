@@ -2,7 +2,7 @@ import threading
 import bisect
 import time
 from OrderedSet import OrderedSet
-from heapq import *
+import heapq
 
 from DoorController import *
 from LightController import *
@@ -19,60 +19,62 @@ class MotionController(object):
             self.aim_set = OrderedSet()
             self.aims_intermediate = []  # heap
             self.aim_main = None
-            self.is_main_returned = False
+            # self.is_main_returned = False
 
             self.button_handler_queue = button_handler_queue
             self.motion_controller = motion_controller
 
         def get_nearest_aim(self):
             assert len(self.aim_set) != 0 or self.aim_main is not None, 'Function cannot be called if there are no ' \
-                                                                        'new aims '
-
+                                                                        'new aims'
             if self.aim_main is not None:
                 # lock due to current_storey and aims_intermediate
                 self.motion_controller.lock.acquire()
                 if not self.aims_intermediate:
                     res = self.aim_main
-                    self.is_main_returned = True
-                # else:
-                #     current_storey = self.motion_controller.current_storey
-                #     speed = self.motion_controller.current_speed
-                #
-                #     res = heappop(self.aims_intermediate)
-                #     while self.is_intermediate_aim(current_storey, self.aim_main[0], res[0]):
-                #         res = heappop(self.aims_intermediate)
+                else:
+                    while not self.is_intermediate_aim(self.aims_intermediate[0]):
+                        heapq.heappop(self.aims_intermediate)
+                    res = self.aims_intermediate[0]
                 self.motion_controller.lock.release()
             else:
-                self.aim_main = self.aim_set.pop()
+                # define new main aim
+                self.aim_main = next(x for x in self.aim_set)
+                # update intermediate aims
+                for aim in self.aim_set:
+                    if self.is_intermediate_aim(aim[0]):
+                        pass
                 res = self.aim_main
-                print 'strategy: chose', res
-                # self.motion_controller.lock.acquire()
-                # current_storey = self.motion_controller.current_storey
-                # self.motion_controller.lock.release()
-                # for aim in self.aim_set:
-                #     if self.is_intermediate_aim(current_storey, aim[0], self.aim_main[0]):
-                #         self.add_new_aim(aim)
 
-            self.aim_main = res
+            print 'strategy: chose', res
             return res
 
-        def is_intermediate_aim(self, storey_from, storey_check, storey_to):
+        def is_intermediate_aim(self, storey_check, storey_from = None, storey_to = None):
+            if storey_to is None:
+                storey_to = self.aim_main[0]
+            if storey_from is None:
+                self.motion_controller.lock.acquire()
+                storey_from = self.motion_controller.current_storey
+                self.motion_controller.lock.release()
             return max(storey_from, storey_to) - 1 >= storey_check >= min(storey_from, storey_to) + 1
 
         # aim = [storey, inner-outer]
         def add_new_aim(self, new_aim):
-            self.motion_controller.lock.acquire()
-            current_storey = self.motion_controller.current_storey
-            self.motion_controller.lock.release()
+            if self.aim_main is not None:
+                # check if such an aim exists in set
+                if new_aim not in self.aim_set:
+                    # add new_aim to the set
+                    self.aim_set.add(new_aim)
 
-            if self.aim_main is not None and self.is_intermediate_aim(current_storey, new_aim[0], self.aim_main[0]):
-                # print 'strategy_module: notify motion controller' + ' -> ', new_aim[0]
-                # self.motion_controller.event_new_aim.set()
-                pass
+                    # update heap of intermediate aims
+                    if self.is_intermediate_aim(new_aim[0]):
+                        heapq.heappush(self.aims_intermediate, new_aim[0])
+            elif not self.aim_set:
+                self.aim_set.add(new_aim)
+                self.motion_controller.event_new_aim.set()
             else:
                 self.aim_set.add(new_aim)
-                if self.aim_main is None:
-                    self.motion_controller.event_new_aim.set()
+            print 'add_new_aim: set at the end:', self.aim_set
 
         def get_new_aim(self):
             self.motion_controller.event_new_aim.clear()
@@ -80,6 +82,13 @@ class MotionController(object):
 
         def remove_aim(self, aim):
             self.aim_set.remove(aim)
+            if self.aim_main == aim:
+                self.aim_main = None
+            if self.aims_intermediate and self.aims_intermediate[0] == aim[0]:
+                heapq.heappop(self.aims_intermediate)
+            if self.aim_set:
+                self.motion_controller.event_new_aim.set()
+                print 'exiting remove_aim'
 
         def run(self):
             while True:
@@ -95,8 +104,9 @@ class MotionController(object):
 
         # -1, 0, 1
         self.current_speed = 0
-        self.current_aim = -1
-        self.new_aim = -1
+        self.current_aim = None
+        self.current_aim_storey = None
+        self.new_aim = None
         self.lock = threading.Lock()
 
         self.door_controller = DoorController()
@@ -117,39 +127,43 @@ class MotionController(object):
         while True:
             if self.current_speed == 0:
                 self.event_for_engine.wait()
+                # lift is not moving, new aim caught
 
                 # bad decision
                 self.event_for_engine.clear()
                 self.current_aim = self.new_aim
+                self.current_aim_storey = self.current_aim[0]
 
-                if self.current_aim > self.current_storey:
+                if self.current_aim_storey > self.current_storey:
                     self.current_speed = 1
-                elif self.current_aim < self.current_storey:
+                elif self.current_aim_storey < self.current_storey:
                     self.current_speed = -1
 
             elif self.event_for_engine.is_set():
+                # new intermediate aim was added
                 print 'engine: change aim ' + str(self.current_aim) + ' -> ' + str(self.new_aim)
                 self.current_aim = self.new_aim
-                if self.current_aim > self.current_storey:
+                self.current_aim_storey = self.current_aim[0]
+                if self.current_aim_storey > self.current_storey:
                     self.current_speed = 1
-                elif self.current_aim < self.current_storey:
+                elif self.current_aim_storey < self.current_storey:
                     self.current_speed = -1
 
             time.sleep(1)
 
             self.lock.acquire()
             self.current_storey += self.current_speed
-            print 'engine: current_storey ', self.current_storey
-            if self.current_storey == self.current_aim:
+            print 'engine: current_storey', self.current_storey, '(aim: ' + str(self.current_aim_storey) + ')'
+            if self.current_storey == self.current_aim_storey:
                 self.current_speed = 0
-                self.light_controller.turn_light_on()
-                while True:
-                    self.door_controller.release_passengers(self.weight_sensor)
-                    if self.weight_sensor.is_limit_exceeded():
-                        continue
-                    if self.weight_sensor.is_empty():
-                        self.light_controller.turn_light_off()
-                    break
+                # self.light_controller.turn_light_on()
+                # while True:
+                #     self.door_controller.release_passengers(self.weight_sensor)
+                #     if self.weight_sensor.is_limit_exceeded():
+                #         continue
+                #     if self.weight_sensor.is_empty():
+                #         self.light_controller.turn_light_off()
+                #     break
                 self.strategy_module.remove_aim(self.current_aim)
             self.lock.release()
 
