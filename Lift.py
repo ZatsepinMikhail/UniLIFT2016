@@ -17,7 +17,7 @@ class Lift(QMainWindow):
         super().__init__()
 
         self.num_storey = 9
-        self.weight_limit = 100
+        self.weight_limit = 200
 
         self.init_processes()
         self.init_ui()
@@ -38,7 +38,10 @@ class Lift(QMainWindow):
         self.motion_controller = MotionController.MotionController(self.queue_bh_sm, self.queue_mc_ib, self.weight_limit)
         self.information_table = InformationBoard.InformationBoard(self.queue_mc_ib)
 
-        self.buttons = Buttons.Buttons(self.num_storey, self.queue_buttons_bh)
+        self.buttons = []
+        for i in range(self.num_storey):
+            self.buttons.append(Buttons.Button(i + 1, False, self.queue_buttons_bh))
+
         # process_buttons = multiprocessing.Process(target=Buttons.simulate_buttons_pressure,
         #                                           args=(self.num_storey, queue_buttons_bh))
         self.process_button_handler = multiprocessing.Process(target=self.button_handler.run)
@@ -80,22 +83,22 @@ class Lift(QMainWindow):
         key = event.key()
 
         if key == Qt.Key_1:
-            self.buttons.press(1)
+            self.buttons[0].press()
         elif key == Qt.Key_2:
-            self.buttons.press(2)
+            self.buttons[1].press()
         elif key == Qt.Key_3:
-            self.buttons.press(3)
+            self.buttons[2].press()
         elif key == Qt.Key_4:
-            self.buttons.press(4)
+            self.buttons[3].press()
         elif key == Qt.Key_5:
-            self.buttons.press(5)
+            self.buttons[4].press()
         elif key == Qt.Key_6:
-            self.buttons.press(6)
+            self.buttons[5].press()
         elif key == Qt.Key_7:
-            self.buttons.press(7)
+            self.buttons[6].press()
         elif key == Qt.Key_8:
-            self.buttons.press(8)
+            self.buttons[7].press()
         elif key == Qt.Key_9:
-            self.buttons.press(9)
+            self.buttons[8].press()
         else:
             super(Lift, self).keyPressEvent(event)

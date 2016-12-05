@@ -38,14 +38,3 @@ def simulate_buttons_pressure(num_storey, queue):
 
         if num_button_pressed == len(buttons):
             break
-
-
-class Buttons(object):
-
-    def __init__(self, num_storey, queue):
-        self.num_storey = num_storey
-        self.queue = queue
-
-    def press(self, storey):
-        button = Button(storey, False, self.queue)
-        button.press()
