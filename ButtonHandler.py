@@ -11,4 +11,9 @@ class ButtonHandler(object):
     def run(self):
         while True:
             button_pressed = self.button_queue.get()
+
+            # poison pill
+            if button_pressed == 'Q':
+                break
+
             self.handle_button_pressure(button_pressed)

@@ -56,7 +56,12 @@ class MotionController(object):
         # aim = (storey, inner-outer)
         def add_new_aim(self, new_aim):
             with self.motion_controller.lock:
-                if self.aim_main is not None:
+                # poison pill
+                if new_aim == 'Q':
+                    self.aim_main = 'Q'
+                    self.motion_controller.event_new_aim.set()
+
+                elif self.aim_main is not None:
                     # check if such an aim exists in set
                     if new_aim not in self.aim_set:
                         # add new_aim to the set
@@ -74,7 +79,10 @@ class MotionController(object):
 
         def get_new_aim(self):
             self.motion_controller.event_new_aim.clear()
-            return self.get_nearest_aim()
+            if self.aim_main == 'Q':
+                return self.aim_main
+            else:
+                return self.get_nearest_aim()
 
         def remove_aim(self, aim):
             with self.motion_controller.lock:
@@ -90,6 +98,11 @@ class MotionController(object):
             while True:
                 new_aim = self.button_handler_queue.get()
                 self.add_new_aim(new_aim)
+
+                # poison pill
+                if new_aim == 'Q':
+                    break
+
                 print('strategy_module: got new aim ' + str(new_aim))
 
     def __init__(self, button_handler_queue, information_board_queue, weight_limit):
@@ -139,10 +152,15 @@ class MotionController(object):
             self.event_new_aim.wait()
             with self.lock:
                 self.new_aim = self.strategy_module.get_new_aim()
+
             self.event_for_engine.set()
+
+            if self.new_aim == 'Q':
+                break
 
     def run_engine(self):
         while True:
+
             if self.current_speed == 0 or self.event_for_engine.is_set():
                 if self.current_speed == 0:
                     # lift is not moving, waiting for a new aim
@@ -152,6 +170,12 @@ class MotionController(object):
                 self.event_for_engine.clear()
                 with self.lock:
                     new_aim = self.new_aim
+
+                # brute stop
+                if new_aim == 'Q':
+                    self.current_storey = 'Q'
+                    break
+
                 print('engine: change aim ' + str(self.current_aim) + ' -> ' + str(new_aim))
                 self.current_aim = new_aim
                 self.current_aim_storey = self.current_aim[0]
@@ -187,8 +211,8 @@ class MotionController(object):
         thread_engine.start()
         self.strategy_module.run()
 
-
-# solution to the problem of unpickable objects
-def init_run(button_handler_queue, weight_limit):
-    motion_controller = MotionController(button_handler_queue, weight_limit)
-    motion_controller.run()
+        print('strategy module stopped')
+        thread_new_aim_checker.join()
+        print('aim checker stopped')
+        thread_engine.join()
+        print('engine stopped')

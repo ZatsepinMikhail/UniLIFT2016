@@ -6,5 +6,10 @@ class InformationBoard(object):
 
     def run(self):
         while True:
-            lift_storey = self.motion_controller_queue.get()
-            print('information_board: ', lift_storey)
+            message = self.motion_controller_queue.get()
+
+            # poison pill
+            if message == 'Q':
+                break
+
+            print('information_board: ', message)
