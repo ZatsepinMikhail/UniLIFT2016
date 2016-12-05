@@ -26,17 +26,19 @@ def simulate_buttons_pressure(num_storey, queue):
     buttons = []
     for i in xrange(1, num_storey + 1):
         buttons.append(Button(i, False, queue))
+    # buttons.append(Button(10, False, queue))
+    # buttons.append(Button(7, False, queue))
 
     num_button_pressed = 0
     while True:
         sleep(5 * random.random())
+        # sleep(4 - num_button_pressed)
         random_button_number = random.randint(0, len(buttons) - 1)
         button = buttons[random_button_number]
+        # button = buttons[num_button_pressed]
         if not button.is_pressed():
             button.press()
             num_button_pressed += 1
-            #print 'Buttons: ', button.get_storey()
 
         if num_button_pressed == len(buttons):
-            #print 'Buttons: all buttons have been pressed. Exit'
             break
