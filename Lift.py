@@ -13,6 +13,8 @@ from PyQt5.QtCore import Qt
 
 class Lift(QMainWindow):
 
+    is_inner_button_pressed = False
+
     def __init__(self):
         super().__init__()
 
@@ -38,9 +40,10 @@ class Lift(QMainWindow):
         self.motion_controller = MotionController.MotionController(self.queue_bh_sm, self.queue_mc_ib, self.weight_limit)
         self.information_table = InformationBoard.InformationBoard(self.queue_mc_ib)
 
-        self.buttons = []
-        for i in range(self.num_storey):
-            self.buttons.append(Buttons.Button(i + 1, False, self.queue_buttons_bh))
+        self.buttons = {False: {}, True: {}}
+        for storey in range(1, self.num_storey + 1):
+            for is_inner in (False, True):
+                self.buttons[is_inner][storey] = Buttons.Button(storey, is_inner, self.queue_buttons_bh)
 
         self.process_button_handler = multiprocessing.Process(target=self.button_handler.run)
 
@@ -94,25 +97,17 @@ class Lift(QMainWindow):
     def keyPressEvent(self, event):
         key = event.key()
 
-        if key == Qt.Key_1:
-            self.buttons[0].press()
-        elif key == Qt.Key_2:
-            self.buttons[1].press()
-        elif key == Qt.Key_3:
-            self.buttons[2].press()
-        elif key == Qt.Key_4:
-            self.buttons[3].press()
-        elif key == Qt.Key_5:
-            self.buttons[4].press()
-        elif key == Qt.Key_6:
-            self.buttons[5].press()
-        elif key == Qt.Key_7:
-            self.buttons[6].press()
-        elif key == Qt.Key_8:
-            self.buttons[7].press()
-        elif key == Qt.Key_9:
-            self.buttons[8].press()
+        if key >= Qt.Key_1 and key <= Qt.Key_9:
+            self.buttons[self.is_inner_button_pressed][key - Qt.Key_1 + 1].press()
+        elif key == Qt.Key_Alt:
+            self.is_inner_button_pressed = True
         elif key == Qt.Key_Q:
             self.stop_work()
         else:
             super(Lift, self).keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        key = event.key()
+
+        if key == Qt.Key_Alt:
+            self.is_inner_button_pressed = False
