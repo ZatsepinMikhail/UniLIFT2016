@@ -45,7 +45,7 @@ class MotionController(object):
                     res = self.aim_main
             return res
 
-        def is_intermediate_aim(self, storey_check, storey_from = None, storey_to = None):
+        def is_intermediate_aim(self, storey_check, storey_from=None, storey_to=None):
             if storey_to is None:
                 storey_to = self.aim_main[0]
             if storey_from is None:
@@ -142,7 +142,7 @@ class MotionController(object):
                 self.event_for_engine.clear()
                 with self.lock:
                     new_aim = self.new_aim
-                print 'engine: change aim ' + str(self.current_aim) + ' -> ' + str(new_aim)
+                print('engine: change aim ' + str(self.current_aim) + ' -> ' + str(new_aim))
                 self.current_aim = new_aim
                 self.current_aim_storey = self.current_aim[0]
                 self.update_speed()

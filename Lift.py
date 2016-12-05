@@ -47,7 +47,7 @@ class Lift(QMainWindow):
 
     def __del__(self):
         # should be corrected
-        print("Вызван метод __del__()")
+        print(u"Вызван метод __del__()")
         self.process_button_handler.join()
         self.process_motion_controller.join()
 
