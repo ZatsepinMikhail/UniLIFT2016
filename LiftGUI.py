@@ -14,6 +14,7 @@ class StoreyState:
 class LiftGUI(QFrame):
 
     storey_number_width = 30
+    information_board_height = 50
 
     def __init__(self, parent, num_storey):
         super().__init__(parent)
@@ -26,10 +27,10 @@ class LiftGUI(QFrame):
         self.update()
 
     def square_width(self):
-        return self.contentsRect().width()
+        return self.contentsRect().width() - self.storey_number_width
 
     def square_height(self):
-        return self.contentsRect().height() // self.num_storey
+        return (self.contentsRect().height() - self.information_board_height) // self.num_storey
 
     def state_at(self, storey):
         if storey == self.current_state.storey:
@@ -51,14 +52,20 @@ class LiftGUI(QFrame):
             self.draw_storey(painter, rect.left() + self.storey_number_width, storey_top, self.state_at(i))
             self.draw_storey_number(painter, rect.left(), storey_top, i)
 
+        self.draw_information_board(painter)
+
+    def draw_information_board(self, painter):
+        rect = self.contentsRect()
+        information_board_rect = QRect(rect.left(), rect.top(), rect.width(), self.information_board_height)
+        painter.fillRect(information_board_rect, Qt.gray)
+        painter.setPen(Qt.black)
+        painter.drawText(information_board_rect, Qt.AlignCenter, "current storey: " + str(self.current_state.storey))
+
     def draw_storey_number(self, painter, x, y, storey_number):
-        rect = QRect(x + 1, y + 1, self.storey_number_width - 3, self.square_height() - 1)
+        rect = QRect(x, y, self.storey_number_width - 1, self.square_height() - 1)
         painter.fillRect(rect, Qt.gray)
         painter.setPen(Qt.black)
-        painter.drawText(
-            rect,
-            Qt.AlignCenter,
-            str(storey_number))
+        painter.drawText(rect, Qt.AlignCenter, str(storey_number))
 
     def draw_storey(self, painter, x, y, storey_state):
         color_table = [Qt.black, Qt.yellow, Qt.blue]
