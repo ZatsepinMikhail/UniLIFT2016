@@ -19,6 +19,9 @@ class MotionController(object):
             self.aim_set = OrderedSet()
             self.aims_intermediate = []  # heap of intermediate aims
             self.aim_main = None
+            self.is_main_finished = False
+            # aim from the passengers inside the lift
+            self.aim_internal = None
 
             self.button_handler_queue = button_handler_queue
             self.motion_controller = motion_controller
@@ -37,7 +40,10 @@ class MotionController(object):
                         res = self.aims_intermediate[0] if self.aims_intermediate else self.aim_main
                 else:
                     # define new main aim
-                    self.aim_main = next(x for x in self.aim_set)
+                    if self.aim_internal is not None:
+                        self.aim_main = self.aim_internal
+                    else:
+                        self.aim_main = next(x for x in self.aim_set)
                     # update intermediate aims
                     for aim in self.aim_set:
                         if self.is_intermediate_aim(aim[0]):
@@ -71,11 +77,15 @@ class MotionController(object):
                         if self.is_intermediate_aim(new_aim[0]):
                             heapq.heappush(self.aims_intermediate, new_aim)
                             self.motion_controller.event_new_aim.set()
-                elif not self.aim_set:
-                    self.aim_set.add(new_aim)
-                    self.motion_controller.event_new_aim.set()
                 else:
-                    self.aim_set.add(new_aim)
+                    if not self.aim_set:
+                        self.aim_set.add(new_aim)
+                        self.motion_controller.event_new_aim.set()
+                    else:
+                        self.aim_set.add(new_aim)
+                    if self.is_main_finished and new_aim[1]:
+                        # internal aim
+                        self.aim_internal = new_aim
 
         def get_new_aim(self):
             self.motion_controller.event_new_aim.clear()
@@ -87,10 +97,14 @@ class MotionController(object):
         def remove_aim(self, aim):
             with self.motion_controller.lock:
                 self.aim_set.remove(aim)
+                self.is_main_finished = False
                 if self.aim_main == aim:
                     self.aim_main = None
+                    self.is_main_finished = True
                 if self.aims_intermediate and self.aims_intermediate[0] == aim:
                     heapq.heappop(self.aims_intermediate)
+                if self.aim_internal == aim:
+                    self.aim_internal = None
                 if self.aim_set:
                     self.motion_controller.event_new_aim.set()
 
@@ -191,6 +205,7 @@ class MotionController(object):
             self.information_board_queue.put(message)
             if current_storey == self.current_aim_storey:
                 self.current_speed = 0
+                self.strategy_module.remove_aim(self.current_aim)
                 self.light_controller.turn_light_on()
                 while True:
                     self.door_controller.release_passengers(self.weight_sensor)
@@ -199,7 +214,6 @@ class MotionController(object):
                     if self.weight_sensor.is_empty():
                         self.light_controller.turn_light_off()
                     break
-                self.strategy_module.remove_aim(self.current_aim)
                 print('engine: change aim ' + str(self.current_aim) + ' -> ' + 'None')
                 self.current_aim = None
 
