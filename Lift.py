@@ -55,7 +55,6 @@ class Lift(QMainWindow):
         self.queue_bh_sm.close()
 
     def init_ui(self):
-
         self.tboard = LiftGUI.LiftGUI(self, self.num_storey)
         self.setCentralWidget(self.tboard)
 
