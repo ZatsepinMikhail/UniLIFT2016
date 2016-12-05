@@ -205,7 +205,7 @@ class MotionController(object):
                 self.current_aim_storey = self.current_aim[0]
 
             self.update_speed()
-            print('Speed:', self.current_speed)
+            print('engine: speed ', self.current_speed)
             if self.current_speed != 0:
                 time.sleep(self.TIME_MOVE_ONE_STOREY / abs(self.current_speed))
 
