@@ -8,10 +8,12 @@ class DoorController(object):
         self.DOORS_OPEN_INTERVAL = 3
 
     def open_doors(self):
+        print 'door_controller: doors are opening'
         time.sleep(0.5)
         self.is_open = True
 
     def close_doors(self):
+        print 'door_controller: doors are closing'
         time.sleep(0.5)
         self.is_open = False
 
@@ -20,9 +22,7 @@ class DoorController(object):
 
     def release_passengers(self, weight_sensor):
         assert not self.is_open, 'Doors are open, function shouldn\'t have been called'
-        print 'door_controller: doors are opening'
         self.open_doors()
         time.sleep(self.DOORS_OPEN_INTERVAL)
-        # weight_sensor.simulate_setting_weight()
-        print 'door_controller: doors are closing'
+        weight_sensor.simulate_setting_weight()
         self.close_doors()

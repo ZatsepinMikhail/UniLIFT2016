@@ -24,8 +24,8 @@ class MotionController(object):
 
         def get_nearest_aim(self):
             with self.motion_controller.lock:
-                assert len(self.aim_set) != 0 or self.aim_main is not None, 'Function cannot be called if there are no ' \
-                                                                            'new aims'
+                assert len(self.aim_set) != 0 or self.aim_main is not None, 'Function cannot be called if there ' \
+                                                                            ' are no new aims'
                 if self.aim_main is not None:
                     # lock due to aims_intermediate
                     if not self.aims_intermediate:
@@ -163,6 +163,8 @@ class MotionController(object):
                         self.light_controller.turn_light_off()
                     break
                 self.strategy_module.remove_aim(self.current_aim)
+                print 'engine: change aim ' + str(self.current_aim) + ' -> ' + 'None'
+                self.current_aim = None
 
     def run(self):
         thread_new_aim_checker = threading.Thread(target=self.run_check_new_aim)
