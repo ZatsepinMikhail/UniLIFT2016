@@ -83,6 +83,8 @@ class Lift(QMainWindow):
         self.queue_bh_sm.close()
         self.queue_buttons_bh.close()
 
+        self.close()
+
     def update_state(self):
         while True:
             sleep(0.1)
