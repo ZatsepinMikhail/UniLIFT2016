@@ -93,8 +93,3 @@ class Lift(QMainWindow):
             self.buttons.press(9)
         else:
             super(Lift, self).keyPressEvent(event)
-
-
-
-
-
