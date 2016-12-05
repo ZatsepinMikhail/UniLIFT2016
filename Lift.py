@@ -99,7 +99,7 @@ class Lift(QMainWindow):
     def keyPressEvent(self, event):
         key = event.key()
 
-        if key >= Qt.Key_1 and key <= Qt.Key_9:
+        if Qt.Key_1 <= key <= Qt.Key_9:
             self.buttons[self.is_inner_button_pressed][key - Qt.Key_1 + 1].press()
         elif key == Qt.Key_Alt:
             self.is_inner_button_pressed = True

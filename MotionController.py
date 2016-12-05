@@ -50,13 +50,14 @@ class MotionController(object):
                     res = self.aim_main
             return res
 
-        def is_intermediate_aim(self, storey_check, storey_from=None, storey_to=None):
+        def is_intermediate_aim(self, storey_check, storey_from=None, storey_to=None, amend_from=1, amend_to=1):
             if storey_to is None:
                 storey_to = self.aim_main[0]
             if storey_from is None:
                 with self.motion_controller.lock:
                     storey_from = self.motion_controller.current_storey
-            return max(storey_from, storey_to) - 1 >= storey_check >= min(storey_from, storey_to) + 1
+            return storey_from + amend_from <= storey_check <= storey_to - amend_to or \
+                storey_to + amend_to <= storey_check <= storey_from - amend_from
 
         # aim = (storey, inner-outer)
         def add_new_aim(self, new_aim):
@@ -65,25 +66,26 @@ class MotionController(object):
                 if new_aim == 'Q':
                     self.aim_main = 'Q'
                     self.motion_controller.event_new_aim.set()
-                elif self.aim_main is not None:
-                    # check if such an aim exists in set
-                    if new_aim not in self.aim_set:
-                        # add new_aim to the set
-                        self.aim_set.add(new_aim)
-
-                        # update heap of intermediate aims
-                        if self.is_intermediate_aim(new_aim[0]):
-                            heapq.heappush(self.aims_intermediate, new_aim)
-                            self.motion_controller.event_new_aim.set()
                 else:
-                    if not self.aim_set:
-                        self.aim_set.add(new_aim)
-                        self.motion_controller.event_new_aim.set()
+                    if self.aim_main is not None:
+                        # check if such an aim exists in set
+                        if new_aim not in self.aim_set:
+                            # add new_aim to the set
+                            self.aim_set.add(new_aim)
+
+                            # update heap of intermediate aims
+                            if self.is_intermediate_aim(new_aim[0]):
+                                heapq.heappush(self.aims_intermediate, new_aim)
+                                self.motion_controller.event_new_aim.set()
                     else:
-                        self.aim_set.add(new_aim)
-                if new_aim[1]:
-                    # internal aim
-                    self.aim_internal_last = new_aim
+                        if not self.aim_set:
+                            self.aim_set.add(new_aim)
+                            self.motion_controller.event_new_aim.set()
+                        else:
+                            self.aim_set.add(new_aim)
+                    if not new_aim[1]:
+                        # internal aim
+                        self.aim_internal_last = new_aim
 
         def get_new_aim(self):
             self.motion_controller.event_new_aim.clear()
@@ -130,6 +132,11 @@ class MotionController(object):
         self.current_aim = None
         self.current_aim_storey = None
         self.new_aim = None
+        self.storey_stopped_last = self.current_storey
+
+        self.TIME_MOVE_ONE_STOREY = 1
+        self.MAX_SPEED = 2
+
         self.lock = threading.RLock()
 
         self.door_controller = DoorController()
@@ -158,6 +165,11 @@ class MotionController(object):
             self.current_speed = -1
         else:
             self.current_speed = 0
+        if self.strategy_module.is_intermediate_aim(storey_check=current_storey,
+                                                    storey_from=self.storey_stopped_last,
+                                                    storey_to=self.current_aim_storey,
+                                                    amend_to=2):
+            self.current_speed *= self.MAX_SPEED
 
     def run_check_new_aim(self):
         while True:
@@ -191,18 +203,22 @@ class MotionController(object):
                 print('engine: change aim ' + str(self.current_aim) + ' -> ' + str(new_aim))
                 self.current_aim = new_aim
                 self.current_aim_storey = self.current_aim[0]
-                self.update_speed()
 
-            time.sleep(1)
+            self.update_speed()
+            print('Speed:', self.current_speed)
+            if self.current_speed != 0:
+                time.sleep(self.TIME_MOVE_ONE_STOREY / abs(self.current_speed))
 
             with self.lock:
-                self.current_storey += self.current_speed
+                if self.current_speed != 0:
+                    self.current_storey += 1 if self.current_speed > 0 else -1
                 current_storey = self.current_storey
 
             message = 'current_storey: ' + str(current_storey) + ' (aim: ' + str(self.current_aim_storey) + ')'
             self.information_board_queue.put(message)
             if current_storey == self.current_aim_storey:
                 self.current_speed = 0
+                self.storey_stopped_last = current_storey
                 self.light_controller.turn_light_on()
                 while True:
                     self.door_controller.release_passengers(self.weight_sensor)

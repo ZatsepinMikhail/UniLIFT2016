@@ -51,7 +51,8 @@ class LiftGUI(QFrame):
             self.draw_storey(painter, rect.left() + self.square_height(), storey_top, self.state_at(i))
             self.draw_storey_number(painter, rect.left(), storey_top, i)
 
-        information_board_rect = QRect(rect.left() + self.square_height(), rect.top(), self.square_width(), self.information_board_height)
+        information_board_rect = QRect(rect.left() + self.square_height(), rect.top(), self.square_width(),
+                                       self.information_board_height)
         self.draw_information_board(painter, information_board_rect)
 
     def draw_information_board(self, painter, rect):
