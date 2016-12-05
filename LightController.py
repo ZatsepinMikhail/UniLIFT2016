@@ -8,8 +8,11 @@ class LightController(object):
 
     def turn_light_on(self):
         self.is_light_on = True
-        print 'light_controller: light turns on'
+        print('light_controller: light turns on')
 
     def turn_light_off(self):
         self.is_light_on = False
-        print 'light_controller: light turns off'
+        print('light_controller: light turns off')
+
+    def get_light_state(self):
+        return self.is_light_on

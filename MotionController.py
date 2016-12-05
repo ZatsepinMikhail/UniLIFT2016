@@ -6,6 +6,7 @@ import heapq
 from DoorController import *
 from LightController import *
 from WeightSensor import *
+from Common import LiftState
 
 
 class MotionController(object):
@@ -89,7 +90,7 @@ class MotionController(object):
             while True:
                 new_aim = self.button_handler_queue.get()
                 self.add_new_aim(new_aim)
-                print 'strategy_module: got new aim ' + str(new_aim)
+                print('strategy_module: got new aim ' + str(new_aim))
 
     def __init__(self, button_handler_queue, weight_limit):
         self.event_new_aim = threading.Event()
@@ -151,7 +152,7 @@ class MotionController(object):
             with self.lock:
                 self.current_storey += self.current_speed
                 current_storey = self.current_storey
-            print 'engine: current_storey', current_storey, '(aim: ' + str(self.current_aim_storey) + ')'
+            print('engine: current_storey', current_storey, '(aim: ' + str(self.current_aim_storey) + ')')
             if current_storey == self.current_aim_storey:
                 self.current_speed = 0
                 self.light_controller.turn_light_on()
@@ -163,7 +164,7 @@ class MotionController(object):
                         self.light_controller.turn_light_off()
                     break
                 self.strategy_module.remove_aim(self.current_aim)
-                print 'engine: change aim ' + str(self.current_aim) + ' -> ' + 'None'
+                print('engine: change aim ' + str(self.current_aim) + ' -> ' + 'None')
                 self.current_aim = None
 
     def run(self):
