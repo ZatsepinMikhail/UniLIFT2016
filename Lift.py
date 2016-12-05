@@ -60,7 +60,7 @@ class Lift(QMainWindow):
         self.tboard = LiftGUI.LiftGUI(self, self.num_storey)
         self.setCentralWidget(self.tboard)
 
-        self.resize(150, 400)
+        self.resize(200, 400)
         self.setWindowTitle('Lift')
         self.show()
 
