@@ -13,7 +13,7 @@ class StoreyState:
 
 class LiftGUI(QFrame):
 
-    BoardWidth = 2
+    BoardWidth = 1
 
     def __init__(self, parent, num_storey):
         super().__init__(parent)
