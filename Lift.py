@@ -4,7 +4,7 @@ import Buttons
 import ButtonHandler
 import MotionController
 import LiftGUI
-import Common
+import InformationBoard
 
 from time import sleep
 from PyQt5.QtWidgets import QMainWindow
@@ -31,8 +31,12 @@ class Lift(QMainWindow):
         # queue button_handler - strategy_module
         self.queue_bh_sm = multiprocessing.Queue()
 
+        # queue motion_controller - information_board
+        self.queue_mc_ib = multiprocessing.Queue()
+
         self.button_handler = ButtonHandler.ButtonHandler(self.queue_buttons_bh, self.queue_bh_sm)
-        self.motion_controller = MotionController.MotionController(self.queue_bh_sm, self.weight_limit)
+        self.motion_controller = MotionController.MotionController(self.queue_bh_sm, self.queue_mc_ib, self.weight_limit)
+        self.information_table = InformationBoard.InformationBoard(self.queue_mc_ib)
 
         self.buttons = Buttons.Buttons(self.num_storey, self.queue_buttons_bh)
         # process_buttons = multiprocessing.Process(target=Buttons.simulate_buttons_pressure,
@@ -41,9 +45,12 @@ class Lift(QMainWindow):
 
         self.process_motion_controller = threading.Thread(target=self.motion_controller.run)
 
+        self.process_information_table = multiprocessing.Process(target=self.information_table.run)
+
         # process_buttons.start()
         self.process_button_handler.start()
         self.process_motion_controller.start()
+        self.process_information_table.start()
 
     def __del__(self):
         # should be corrected

@@ -92,10 +92,12 @@ class MotionController(object):
                 self.add_new_aim(new_aim)
                 print('strategy_module: got new aim ' + str(new_aim))
 
-    def __init__(self, button_handler_queue, weight_limit):
+    def __init__(self, button_handler_queue, information_board_queue, weight_limit):
         self.event_new_aim = threading.Event()
         self.event_for_engine = threading.Event()
         self.strategy_module = MotionController.StrategyModule(button_handler_queue, self)
+
+        self.information_board_queue = information_board_queue
         self.current_storey = 1
 
         # -1, 0, 1
@@ -160,7 +162,9 @@ class MotionController(object):
             with self.lock:
                 self.current_storey += self.current_speed
                 current_storey = self.current_storey
-            print('engine: current_storey', current_storey, '(aim: ' + str(self.current_aim_storey) + ')')
+
+            message = 'current_storey: ' + str(current_storey) + ' (aim: ' + str(self.current_aim_storey) + ')'
+            self.information_board_queue.put(message)
             if current_storey == self.current_aim_storey:
                 self.current_speed = 0
                 self.light_controller.turn_light_on()
