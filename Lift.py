@@ -26,40 +26,40 @@ class Lift(QMainWindow):
 
     def init_processes(self):
         # queue buttons - button_handler
-        queue_buttons_bh = multiprocessing.Queue()
+        self.queue_buttons_bh = multiprocessing.Queue()
 
         # queue button_handler - strategy_module
-        queue_bh_sm = multiprocessing.Queue()
+        self.queue_bh_sm = multiprocessing.Queue()
 
-        button_handler = ButtonHandler.ButtonHandler(queue_buttons_bh, queue_bh_sm)
-        self.motion_controller = MotionController.MotionController(queue_bh_sm, self.weight_limit)
+        self.button_handler = ButtonHandler.ButtonHandler(self.queue_buttons_bh, self.queue_bh_sm)
+        self.motion_controller = MotionController.MotionController(self.queue_bh_sm, self.weight_limit)
 
-        self.buttons = Buttons.Buttons(self.num_storey, queue_buttons_bh)
+        self.buttons = Buttons.Buttons(self.num_storey, self.queue_buttons_bh)
         # process_buttons = multiprocessing.Process(target=Buttons.simulate_buttons_pressure,
         #                                           args=(self.num_storey, queue_buttons_bh))
-        process_button_handler = multiprocessing.Process(target=button_handler.run)
+        self.process_button_handler = multiprocessing.Process(target=self.button_handler.run)
 
-        process_motion_controller = threading.Thread(target=self.motion_controller.run)
+        self.process_motion_controller = threading.Thread(target=self.motion_controller.run)
 
         # process_buttons.start()
-        process_button_handler.start()
-        process_motion_controller.start()
+        self.process_button_handler.start()
+        self.process_motion_controller.start()
 
-        # time.sleep(10)
-        #
-        # process_buttons.join()
-        # process_button_handler.join()
-        # process_motion_controller.join()
-        #
-        # queue_buttons_bh.close()
-        # queue_bh_sm.close()
+    def __del__(self):
+        # should be corrected
+        print("Вызван метод __del__()")
+        self.process_button_handler.join()
+        self.process_motion_controller.join()
+
+        self.queue_buttons_bh.close()
+        self.queue_bh_sm.close()
 
     def init_ui(self):
 
         self.tboard = LiftGUI.LiftGUI(self, self.num_storey)
         self.setCentralWidget(self.tboard)
 
-        self.resize(300, 400)
+        self.resize(150, 400)
         self.setWindowTitle('Lift')
         self.show()
 
