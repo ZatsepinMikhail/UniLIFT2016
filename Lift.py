@@ -40,10 +40,7 @@ class Lift(QMainWindow):
         self.motion_controller = MotionController.MotionController(self.queue_bh_sm, self.queue_mc_ib, self.weight_limit)
         self.information_table = InformationBoard.InformationBoard(self.queue_mc_ib)
 
-        self.buttons = {False: {}, True: {}}
-        for storey in range(1, self.num_storey + 1):
-            for is_inner in (False, True):
-                self.buttons[is_inner][storey] = Buttons.Button(storey, is_inner, self.queue_buttons_bh)
+        self.init_buttons()
 
         self.process_button_handler = multiprocessing.Process(target=self.button_handler.run)
 
@@ -55,6 +52,12 @@ class Lift(QMainWindow):
         self.process_button_handler.start()
         self.process_motion_controller.start()
         self.process_information_table.start()
+
+    def init_buttons(self):
+        self.buttons = {False: {}, True: {}}
+        for storey in range(1, self.num_storey + 1):
+            for is_inner in (False, True):
+                self.buttons[is_inner][storey] = Buttons.Button(storey, is_inner, self.queue_buttons_bh)
 
     def init_ui(self):
         self.tboard = LiftGUI.LiftGUI(self, self.num_storey)
